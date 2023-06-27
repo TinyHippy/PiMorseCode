@@ -260,32 +260,55 @@ int detectInput(){
 	int out = 0;
 	bool hold = false;
 	bool loop = true;
+	clock_t pause; 
 	clock_t start;
 	clock_t end; 
 	double elapsed;
-	
+	pause = clock();
 	while(loop){
-
+		
+		//if button pressed
 		if(digitalRead(BTTNPIN) == 0){
 			digitalWrite(LEDPIN, HIGH);
 
 			if(hold){
-
+				pause = clock();
 				hold = false;
 				end = clock();
-				elapsed = ((double)(end-start)) / CLOCKS_PER_SEC;
-				printf("Button Held for: %f sec\n", elapsed);
+				elapsed = ((double)(end-start)) *1000 / CLOCKS_PER_SEC;
 				loop = false;
 				if(elapsed > DIT){
 					out = 1;
+					//printf("Dah: Button Held for: %f sec\n", elapsed);
 				}//if
+				else if(elapsed < 1){
+					loop = true; 
+				}
+				else{
+					
+					//printf("Dit: Button Held for: %f sec\n", elapsed);
+				}
 			}//if
+			else{
+
+			
+				end = clock();
+				elapsed = ((double)(end - pause)) * 1000 / CLOCKS_PER_SEC;
+				if(elapsed > DIT*5){
+					
+					out = 2; 
+					loop = false; 
+
+				}
+
+			}
 
 		}//if
 		else{
 
 			if(!hold){
 				start = clock();
+				pause = clock(); 
 				hold = true; 
 			}//if
 
@@ -299,13 +322,58 @@ int detectInput(){
 
 }
 
+char indexToA(int i){
+	char out = ' ';
+	if(i < 26){
+		
+		out = 0x41 + i;
+
+	}
+	else if( i < 36){
+		
+		out = 0x30 + i - 26;
+
+	}
+
+	return out;
+
+}
+
+int searchSeq(int in[]){
+	int out = 0;
+	bool match = true;
+	bool found = false;
+	for(int i = 0; i < 36; i ++){
+		for(int j = 0; j < 5; j++){
+			if(morseCode[i][j] != in[j]){
+				match = false;
+			}
+		}//for
+
+		if(match){
+			printf("Match at index %d\n", i);
+			out = i;
+			found = true;
+		}
+		else{
+
+			match = true;
+		}
+	}//for
+	return out; 
+}
+
+
 char detectChar(){
 
 	int tmp[5] = {2,2,2,2,2};
 	char out = ' ';
 	for(int i = 0; i < 5; i ++){
-
+		tmp[i] = detectInput();
+		printf("%d,", tmp[i]);
 	}
+	printf("\n");
+	out = indexToA(searchSeq(tmp));
 	return out; 	
 
 }
@@ -330,8 +398,11 @@ int main(void){
 		blinkWord(word);	
 	}
 
-	detectInput();
+
+	char detect = detectChar();
+	printf("%c\n", detect);
+ 
 
 	farewell();
-	return 0; 
-}
+	return 0;
+}	
